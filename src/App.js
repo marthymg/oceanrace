@@ -78,8 +78,7 @@ const mainContract = await readContract({
   address: process.env.REACT_APP_CONTRACT_ADDRESS,
   abi: oceanRaceABI,
   functionName: 'position',
-  //args: [process.env.REACT_APP_CONTRACT_OWNER_ADDRESS],
-  args: ['0x9745fbfeCE314C2C9D4817e636Bc174236371Eb8'],
+  args: [process.env.REACT_APP_CONTRACT_OWNER_ADDRESS],
 })
 
 // mapping longitude lon -> lng the googlemaps way
