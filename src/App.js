@@ -72,13 +72,14 @@ const config = createConfig({
   webSocketPublicClient,
 })
 
-const _contractAddress = process.env.REACT_APP_CONTRACT_OWNER_ADDRESS;
+// ["0x${string}"]
 
 const mainContract = await readContract({
   address: process.env.REACT_APP_CONTRACT_ADDRESS,
   abi: oceanRaceABI,
   functionName: 'position',
-  args: [_contractAddress],
+  //args: [process.env.REACT_APP_CONTRACT_OWNER_ADDRESS],
+  args: ['0x9745fbfeCE314C2C9D4817e636Bc174236371Eb8'],
 })
 
 // mapping longitude lon -> lng the googlemaps way
