@@ -40,26 +40,42 @@ const oceanRaceABI = [
       "stateMutability": "view",
       "type": "function"
     },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "direction",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "newDirection",
+          "type": "string"
+        }
+      ],
+      "name": "setDirection",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
 
     
 ];
-
-const oceanRaceABI_2 = [
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "newDirection",
-        "type": "string"
-      }
-    ],
-    "name": "setDirection",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-
-];
+ 
  
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [polygonMumbai],
@@ -72,14 +88,24 @@ const config = createConfig({
   webSocketPublicClient,
 })
 
-// ["0x${string}"]
-
+// Position
 const mainContract = await readContract({
   address: process.env.REACT_APP_CONTRACT_ADDRESS,
   abi: oceanRaceABI,
   functionName: 'position',
   args: [process.env.REACT_APP_CONTRACT_OWNER_ADDRESS],
 })
+//Direction
+const mainContractDirection = await readContract({
+  address: process.env.REACT_APP_CONTRACT_ADDRESS,
+  abi: oceanRaceABI,
+  functionName: 'direction',
+  args: [process.env.REACT_APP_CONTRACT_OWNER_ADDRESS],
+})
+
+// mapping longitude lon -> lng the googlemaps way
+const _mainContractDirection = mainContractDirection.replaceAll("lon", "lng")
+const mainContractObjDirection = JSON.parse(_mainContractDirection.replaceAll("'", '"'));
 
 // mapping longitude lon -> lng the googlemaps way
 const _mainContract = mainContract.replaceAll("lon", "lng")
@@ -110,10 +136,12 @@ function App() {
   return (
     <>
     <WagmiConfig config={config}>
- 
+      <h1>Ocean Race 2023 / Hamburg - New York</h1>
+      {window.isConnected && (
       <div>
         My new Direction : {JSON.stringify(markers)}
       </div>
+      )}
       <Profile/>
       <ContractWrite value={markers}/>
         <div style={{ height: '100vh', width: '100%' }}>
@@ -124,7 +152,7 @@ function App() {
                 <GoogleMap
                   mapContainerClassName="map-container"
                   center={center}
-                  zoom={10}
+                  zoom={8}
                   onClick={onMapClick}
                 >
                 {window.isConnected && markers.map((marker) => (
@@ -152,7 +180,10 @@ function App() {
                         lng: Number(selectedCenter.lon)
                       }}
                   >
-                  <div>{JSON.stringify(mainContractObj)}</div>  
+                  <>
+                  <div>Position: {JSON.stringify(mainContractObj)}</div>
+                  <div>Direction: {JSON.stringify(mainContractObjDirection)}</div>  
+                  </>
                   </InfoWindowF>
                 )}             
                 </MarkerF>
@@ -185,7 +216,7 @@ function ContractWrite(value) {
   
   const { config } = usePrepareContractWrite({
     address: process.env.REACT_APP_CONTRACT_ADDRESS,
-    abi: oceanRaceABI_2,
+    abi: oceanRaceABI,
     functionName: 'setDirection',
     args: [_value],
   })
@@ -201,7 +232,7 @@ function ContractWrite(value) {
           })
         }
       >
-        Crew only
+        Crew only / set sailing course
       </button>
       {isLoading && <div>Check Wallet</div>}
       {isSuccess && <div>Transaction: {JSON.stringify(data)}</div>}
