@@ -7,12 +7,12 @@ import { useAccount, useConnect } from 'wagmi'
 import { InjectedConnector } from 'wagmi/connectors/injected'
 import { useContractWrite, usePrepareContractWrite } from 'wagmi'
 
-//import ABI from './OceanRace.json'
+import {useQuery, gql, ApolloClient, InMemoryCache,} from '@apollo/client';
 
 import { readContract } from '@wagmi/core'
 
 // google stuff
-import { GoogleMap, MarkerF, InfoWindowF, useLoadScript } from "@react-google-maps/api";
+import { GoogleMap, MarkerF, InfoWindowF, useLoadScript, PolylineF } from "@react-google-maps/api";
 import { useMemo, useState, Fragment } from "react";
 
 import { connect } from '@wagmi/core';
@@ -107,9 +107,76 @@ const mainContractDirection = await readContract({
 const _mainContractDirection = mainContractDirection.replaceAll("lon", "lng")
 const mainContractObjDirection = JSON.parse(_mainContractDirection.replaceAll("'", '"'));
 
+console.log(mainContractObjDirection)
+
 // mapping longitude lon -> lng the googlemaps way
 const _mainContract = mainContract.replaceAll("lon", "lng")
 const mainContractObj = JSON.parse(_mainContract.replaceAll("'", '"'));
+
+// History data for building the route
+//https://api.studio.thegraph.com/query/35556/ocean-race/version/latest
+
+const QUERY_ROUTE = gql`
+query {
+ocrresponses(first: 40, orderBy: blockNumber, orderDirection: desc) {
+    id
+    requestId
+    result
+    err
+    blockNumber
+    blockTimestamp
+  }
+  ocrresponses {
+    id
+  }
+}
+`
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  uri: "https://api.studio.thegraph.com/query/35556/ocean-race/version/latest"
+})
+
+const {data} = await client.query({
+  query: QUERY_ROUTE ,
+})
+
+console.log(data.ocrresponses.length)
+
+// Convert a hex string to a byte array
+const hexToBytes = (hex) => {
+  var bytes = [];
+
+  for (var c = 0; c < hex.length; c += 2) {
+    bytes.push(parseInt(hex.substr(c, 2), 16));
+  }
+
+  return bytes;
+};
+
+// historicle routes formated in right order
+let _routes = [];
+
+function AddRowToTable(lat, lng) {
+  _routes.push({lat: lat, lng: lng});
+}
+
+let obj = {};
+
+await data.ocrresponses.forEach(function(route) {
+  if (route.result !='0x')
+    {
+      
+      const bytesStringRoute = String.fromCharCode(... hexToBytes(route.result)).replaceAll("lon", "lng")
+      //const _bytesStringRoute = JSON.stringify(bytesStringRoute.replaceAll("\x00", '').replaceAll("'", '"'));
+      const _bytesStringRoute = bytesStringRoute.replaceAll("\x00", '').replaceAll("'", '"');
+
+      //let str_obj = '{"lat":"54.14","lng":"7.39","wsp":14.5,"wdi":341,"time":1686135177953}';
+
+      obj = JSON.parse(_bytesStringRoute)
+      AddRowToTable(Number(obj.lat), Number(obj.lng))
+
+  } 
+})
 
 
 function App() {
@@ -161,6 +228,7 @@ function App() {
                         lat: marker.lat,
                         lng: marker.lng 
                       }} />
+
                 ))}
 
                 <MarkerF 
@@ -187,6 +255,15 @@ function App() {
                   </InfoWindowF>
                 )}             
                 </MarkerF>
+                <PolylineF path={_routes}
+                                          
+                                          options={{
+                                              geodesic: true,
+                                              strokeColor: "#ff2527",
+                                              strokeOpacity: 0.75,
+                                              strokeWeight: 2,
+                                          }}
+                />
                 </GoogleMap>
               )}
             </div>
