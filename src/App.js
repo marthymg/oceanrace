@@ -169,7 +169,7 @@ await data.ocrresponses.forEach(function(route) {
       const bytesStringRoute = String.fromCharCode(... hexToBytes(route.result)).replaceAll("lon", "lng")
       //const _bytesStringRoute = JSON.stringify(bytesStringRoute.replaceAll("\x00", '').replaceAll("'", '"'));
       const _bytesStringRoute = bytesStringRoute.replaceAll("\x00", '').replaceAll("'", '"');
-
+      // commit to 
       //let str_obj = '{"lat":"54.14","lng":"7.39","wsp":14.5,"wdi":341,"time":1686135177953}';
 
       obj = JSON.parse(_bytesStringRoute)
